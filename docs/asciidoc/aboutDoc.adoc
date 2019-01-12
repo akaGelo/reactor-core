@@ -20,7 +20,7 @@ copy contains this Copyright Notice, whether distributed in print or electronica
 == Contributing to the Documentation
 Не требует перевода
 
-== Getting Help
+== Поддержка
 Есть несколько способов (англоязычных)
 
 * Чат сообщества на https://gitter.im/reactor/reactor[Gitter].

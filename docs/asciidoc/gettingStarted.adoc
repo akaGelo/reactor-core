@@ -1,8 +1,7 @@
 [[getting-started]]
-= Getting Started
+= С чего наачть
 
-This section contains information that should help you get going with Reactor. It
-includes the following information:
+Этот раздел содержит информацию для начала работы с Reactor. А именно:
 
 * <<getting-started-introducing-reactor>>
 * <<prerequisites>>
@@ -10,46 +9,41 @@ includes the following information:
 * <<getting>>
 
 [[getting-started-introducing-reactor]]
-== Introducing Reactor
+== Введение в Reactor
 //TODO flesh out, reword. could also be updated on the website
-Reactor is a fully non-blocking reactive programming foundation for the JVM, with
-efficient demand management (in the form of managing "backpressure"). It integrates
-directly with the Java 8 functional APIs, notably `CompletableFuture`, `Stream`, and
-`Duration`. It offers composable asynchronous sequence APIs `Flux` (for [N] elements) and
-`Mono` (for [0|1] elements), extensively implementing the [Reactive Streams](http://www.reactive-streams.org/)
-specification.
+Reactor полностью неблокируемый набор компонент для реактивного программирование под JVM, with
+efficient demand management (in the form of managing "backpressure"). Reactor интегрируется с функциональными API Java 8,
+ особенно с `CompletableFuture`, `Stream`, и `Duration`. Он предосатвляет составные асинхронные интерфейсы последовательностей
+`Flux` (для [N] элементов) и `Mono` (для [0|1] элементов), полностью реализует спецификацию [Reactive Streams](http://www.reactive-streams.org/)
+.
 
-Reactor also supports non-blocking inter-process communication with the
-`reactor-netty` project. Suited for Microservices Architecture, Reactor Netty offers
-backpressure-ready network engines for HTTP (including Websockets), TCP, and UDP.
-Reactive Encoding and Decoding are fully supported.
+Reactor так же подходит для  неблокирующего межпроцессорного взаимодействия с помощью `reactor-netty`.
+Reactor Netty предлагает реализацию работы с HTTP (включая Websockets),TCP и UDP
+с поддержкой backpressure. Реактивное кодирование и декодирование поддерживается полностью.
+Хорошо подходит для микросервисной архитектуры.
 
 [[prerequisites]]
-== Prerequisites
-Reactor Core runs on `Java 8` and above.
+== Требования
+Reactor Core работает на `Java 8` и старше.
 
-It has a transitive dependency on `org.reactive-streams:reactive-streams:1.0.2`.
+Реактор имеет транзитивную зависимость от `org.reactive-streams:reactive-streams:1.0.2`.
 
 [NOTE]
 ====
-*Android support*:
+*Поддержка Android *:
 
-* Reactor 3 does not officially support or target Android (consider using RxJava 2 if
-such support is a strong requirement).
-* However, it should work fine with Android SDK 26 (Android O) and above.
-* We are open to evaluating changes that benefit Android support in a best-effort
-fashion. However, we cannot make guarantees. Each decision must be made on a
-case-by-case basis.
+* Reactor 3 официально не поддерживает и не ориентирован на Android (посмотрите на RxJava 2 если вам необходима реактивность).
+* Однако, он должен нормально работать начиная с Android SDK 26 (Android O) и выше.
+* Мы открыты для изменений, которые положительно повлияют на поддержку Android, но мы не даем никаких гарантий.
+ Каждый случай будет требовать индивидуального рассмотрения.
 ====
 
 [[getting-started-understanding-bom]]
-== Understanding the BOM
-Reactor 3 uses a BOM model since `reactor-core 3.0.4`, with the `Aluminium` release train.
-This curated list groups artifacts that are meant to work well together, providing
-the relevant versions despite potentially divergent versioning schemes in these artifacts.
+== Понимание BOM
+Reactor 3 использует BOM модель `reactor-core 3.0.4`, с `Aluminium` релиза. _(примечание: в переводе версии наверняка устарели)_
+Это список версий артифактов, коотрые хооршо работают вместе, несмотря на различные схемы версионирования.
 
-The BOM (Bill of Materials) is itself versioned, using a release train scheme
-with a codename followed by a qualifier. Here are a few examples:
+BOM  использует кодовое имя и версию в качестве схемы версионирования. Вот несколько примеров:
 [verse]
 Aluminium-RELEASE
 Californium-BUILD-SNAPSHOT
@@ -57,11 +51,9 @@ Aluminium-SR1
 Bismuth-RELEASE
 Californium-SR32
 
-The codenames represent what would traditionally be the MAJOR.MINOR number. They (mostly)
-come from the https://en.wikipedia.org/wiki/Periodic_table#Overview[Periodic Table of
-Elements], in increasing alphabetical order.
+Кодовые название заменяет традиционное MAJOR.MINOR. Они взяты из  https://en.wikipedia.org/wiki/Periodic_table#Overview[Периодической системы химических элементов], в возрастающем алфавитном порядке.
 
-The qualifiers are (in chronological order):
+Квалификаторы (в хронологическом порядке):
 
 * `BUILD-SNAPSHOT`
 * `M1`..`N`: Milestones or developer previews
@@ -70,19 +62,17 @@ The qualifiers are (in chronological order):
 number, SR stands for "Service Release").
 
 [[getting]]
-== Getting Reactor
-As mentioned earlier, the easiest way to use Reactor in your core is to use the BOM and
-add the relevant dependencies to your project. Note that, when adding such a dependency,
-you must omit the version so that the version gets picked up from the BOM.
+== Получение Reactor'а
+Как уже говорилось, самый простой способ использовать Reactor в вашем  приложении это использовать BOM
+и добавить необходимые зависимости в ваш проект. Обратите внимание, что при добавлении зависимостей
+вы не должны указывать версию, что-бы получить правильные версии из BOM спецификации.
 
-However, if you want to force the use of a specific artifact's version, you can specify
-it when adding your dependency, as you usually would. You can also forgo the BOM entirely
-and specify dependencies by their artifact versions.
+Однако, если вы хотите получть определенные версии артефактов, вы можете указать их вручную.
+При необходимости вы можете полностью отказаться от спецификации версий через BOM и указывать их вручную.
 
-=== Maven Installation
-The BOM concept is natively supported by Maven. First, you need to import the BOM by
-adding the following snippet to your `pom.xml`. If the top section
-(`dependencyManagement`) already exists in your pom, add only the contents.
+=== Подключение к  Maven проекту
+Концепция BOM поддерживается нативно Maven. Для начала, вам нужно импортировать спецификацию BOM, добавив код
+сниппета в ваш `pom.xml`. Если тег  (`dependencyManagement`) уже существует в вашем pom.xml, добавьте только содержимое.
 
 [source,xml]
 ----
@@ -91,18 +81,17 @@ adding the following snippet to your `pom.xml`. If the top section
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-bom</artifactId>
-            <version>Bismuth-RELEASE</version>
+            <version>Bismuth-RELEASE</version><2>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
     </dependencies>
 </dependencyManagement>
 ----
-<1> Notice the `dependencyManagement` tag. This is in addition to the regular
-`dependencies` section.
+<1> Обратите внимание `dependencyManagement` тег  это не замена тега  `dependencies`, это самостоятельный тег.
+<1> Вы читаете перевод, и версия наверняка устарела.
 
-Next, add your dependencies to the relevant reactor projects, as usual, except without a
-`<version>`, as shown here:
+Затем, добавьте нужные зависимости Reactor'а, без тега `<version>`. Например:
 
 [source,xml]
 ----
@@ -119,16 +108,15 @@ Next, add your dependencies to the relevant reactor projects, as usual, except w
     </dependency>
 </dependencies>
 ----
-<1> Dependency on the core library
-<2> No version tag here
-<3> `reactor-test` provides facilities to unit test reactive streams
+<1> core библиотека
+<2> версия не указана, будет взята из BOM
+<3> `reactor-test` инструменты для тестирования реактивных потоков
 
-=== Gradle installation
-Gradle has no core support for Maven BOMs, but you can use Spring's
-https://github.com/spring-gradle-plugins/dependency-management-plugin[gradle-dependency-management]
-plugin.
+=== Подключение к Gradle проекту
+Gradle не поддерживает Maven BOM спецификации. Но вы можете использовать  Spring плагин для управления зависимостями
+https://github.com/spring-gradle-plugins/dependency-management-plugin[gradle-dependency-management].
 
-First, apply the plugin from the Gradle Plugin Portal:
+Вначале, добавьте плагин из Gradle Plugin Portal:
 
 [source,groovy]
 ----
@@ -136,10 +124,9 @@ plugins {
     id "io.spring.dependency-management" version "1.0.6.RELEASE" <1>
 }
 ----
-<1> as of this writing, 1.0.6.RELEASE is the latest version of the plugin.
-Check for updates.
+<1> На момент написания версия  1.0.6.RELEASE последняя. Проверяйте обновления!.
 
-Then use it to import the BOM:
+Теперь подключите BOM:
 [source,groovy]
 ----
 dependencyManagement {
@@ -149,20 +136,18 @@ dependencyManagement {
 }
 ----
 
-Finally add a dependency to your project, without a version number:
+Добавьте зависимоть к вашему проекту, бещ номера версии:
 [source,groovy]
 ----
 dependencies {
      compile 'io.projectreactor:reactor-core' <1>
 }
 ----
-<1> There is no third `:` separated section for the version. It is taken from
-the BOM.
+<1> Второе `:` отсутствует. Версия не указана. Она будет взята из спецификации BOM.
 
-=== Milestones and Snapshots
-Milestones and developer previews are distributed through the Spring Milestones
-repository rather than Maven Central. To add it to your build configuration
-file, use the following snippet:
+=== Вехи и снапшоты
+Вехи и снапшоты для разработчиков распространяются через репозиторий Spring Milestones, а не через Maven Central.
+Что бы добавить его в свой проект,  скопируйте код снипета в `pom.xml`:
 
 .Milestones in Maven
 [source,xml]
@@ -176,7 +161,7 @@ file, use the following snippet:
 </repositories>
 ----
 
-For Gradle, use the following snippet:
+Для Gradle используйте:
 
 .Milestones in Gradle
 [source,groovy]
@@ -187,7 +172,7 @@ repositories {
 }
 ----
 
-Similarly, snapshots are also available in a separate dedicated repository:
+Аналогично, доступны снапшоты в репозитории Spring Snapshot Repository:
 
 .BUILD-SNAPSHOTs in Maven
 [source,xml]
