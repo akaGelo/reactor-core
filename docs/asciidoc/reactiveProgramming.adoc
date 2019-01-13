@@ -1,13 +1,10 @@
 [[intro-reactive]]
-= Introduction to Reactive Programming
+= Введение в Реактивное программирование
 Reactor is an implementation of the Reactive Programming paradigm, which can be summed up
 as:
 
-[quote, https://en.wikipedia.org/wiki/Reactive_programming]
-Reactive programming is an asynchronous programming paradigm concerned with data streams
-and the propagation of change. This means that it becomes possible to express static
-(e.g. arrays) or dynamic (e.g. event emitters) data streams with ease via the employed
-programming language(s).
+[quote, https://ru.wikipedia.org/wiki/Реактивное_программирование]
+Реактивное программирование — парадигма программирования, ориентированная на потоки данных и распространение изменений. Это означает, что должна существовать возможность легко выражать статические и динамические потоки данных, а также то, что нижележащая модель исполнения должна автоматически распространять изменения благодаря потоку данных.
 
 As a first step in the direction of reactive programming, Microsoft created the Reactive
 Extensions (Rx) library in the .NET ecosystem. Then RxJava implemented reactive
@@ -16,90 +13,83 @@ programming on the JVM.  As time went on, a standardization for Java emerged thr
 interaction rules for reactive libraries on the JVM. Its interfaces have been
 integrated into Java 9 under the parent `Flow` class.
 
-The reactive programming paradigm is often presented in object-oriented languages as an
-extension of the Observer design pattern. One can also compare the main reactive streams
-pattern with the familiar Iterator design pattern, as there is a duality to the
-`Iterable`-`Iterator` pair in all of these libraries. One major difference is that, while
-an Iterator is *pull*-based, reactive streams are *push*-based.
+Парадигма реактивного программирования в обьектно ориентированных языках часто представляется как расширение
+паттерная Observer. Так же можно сравнить реактивные потоки (stream) с хорошо всем знакомым паттерном Iterator.
+Связка `Iterable`-`Iterator` есть во всех библиотеках. Основное отличие в том что  Iterator основан на  *pull*-модели,
+а реактивные потоки использую *push*-подход.
 
-Using an iterator is an imperative programming pattern, even though the method of
-accessing values is solely the responsibility of the `Iterable`. Indeed, it is up to the
-developer to choose when to access the `next()` item in the sequence. In reactive
-streams, the equivalent of the above pair is `Publisher-Subscriber`. But it is the
-`Publisher` that notifies the Subscriber of newly available values _as they come_, and
-this push aspect is the key to being reactive. Also, operations applied to pushed values
-are expressed declaratively rather than imperatively: the programmer expresses the logic
-of the computation rather than describing its exact control flow.
+Iterator - шаблон имеративного программирования. Ответственность за метод доступа к значениям лежит исключительно на `Iterable`.
+Разработчик сам выбирает когда получить доступ к элементу последовательности вызвав метод `next()`.
+В реактивных потоках, эквивалент вышеупомянутой связки `Publisher-Subscriber`.
+Разница в том, что  `Publisher` уведомляет `Subscriber` о новых доступных значениях _по мере их поступления_,
+и это уведомление(push) является сигналом к действиям.Кроме того, операции, применяемые к опубликованным значениям,
+описываются в декларативном стиле, а не императивно: программист описывает логику вычислений,
+а не описывает набор инструкций для последовательного выполнения.
 
-In addition to pushing values, the error handling and completion aspects are also covered
-in a well defined manner. A `Publisher` can push new values to its `Subscriber` (by
-calling `onNext`) but can also signal an error (by calling `onError`) or completion (by
-calling `onComplete`). Both errors and completion terminate the sequence. This can
-be summed up as:
+
+В дополнение к push модели, кроме публикации значений, реактиное программирование четко описывает способы обработы ошибок
+и завершения потоков.`Publisher` может выдвигать новые значения в его `Subscriber` (вызывая метод `onNext`),
+может сигнализировать об ошибке (вызывая метод `onError`) или завершении (вызывая метод `onComplete`).
+И ошибки и сигнал завершения  завершают последовательность. Это можно представить как:
 
 [source]
 onNext x 0..N [onError | onComplete]
 
-This approach is very flexible. The pattern supports use cases where there is no value,
-one value, or n values (including an infinite sequence of values, such as the continuing
-ticks of a clock).
+Такой подход очень гибкий. Шаблон описывает случаи использования где нет значений,
+есть одно значение или есть n значений (включая бесконечную последовательность значений, к примеру тики часов).
 
-But let's first consider, why would we need such an asynchronous reactive library in the first place?
+Но вначале давайте рассмотрим зачем нам вообще нужна такая асинхронная реактивная библиотека?
 
-== Blocking Can Be Wasteful
-Modern applications can reach huge numbers of concurrent users, and, even though the
-capabilities of modern hardware have continued to improve, performance of
-modern software is still a key concern.
+== Блокировки могут быть расточительны
+Современные приложения могут обслуживатель большое количество пользователей одновременно,
+и несмотря на то что аппаратное обеспечение, продолжает улучшаться, производительность современного
+ПО по прежнему являвется ключевой проблемой.
 
-There are broadly two ways one can improve a program's performance:
+Существует два основных способа увеличения производительности программы:
 
-. *parallelize*: use more threads and more hardware resources.
-. *seek more efficiency* in how current resources are used.
+. *распаралелить*: использовать больше потоков и больше аппаратных ресурсов.
+. *стремится к большей эффективности* в использовании имебщихся аппаратных ресурсов.
 
-Usually, Java developers write programs using blocking code. This practice
-is fine until there is a performance bottleneck, at which point the time
-comes to introduce additional threads, running similar blocking code. But this
-scaling in resource utilization can quickly introduce contention and concurrency
-problems.
+Обычно Java разработчики пишут используя блокирующий код. Этот подход хорош, пока не возникнет узкое место
+в производительности программы, после этого приходится запускать дополнительные потоки,
+выполнябщие аналогичный блокируемый код. Но такой подход к масштабированию обычно быстро вызывает
+проблемы конкуретного доступа.
 
-Worse still, blocking wastes resources. If you look closely, as soon as a
-program involves some latency (notably I/O, such as a database request or a
-network call), resources are wasted because a thread (or many threads)
-now sits idle, waiting for data.
+Еще хуже,что это вызовет блокировку ненужных ресурсов. Обратите внимание, как тольпо программа предполагает
+работу с задержкой (особенно операции ввода/вывода, такие как запросы к БД или сетевое взаимодействие),
+ресурсы тратятся зря, потому что поток (или несколько потоков) простаивает без работы,
+находясь в состоянии ожидания данных.
 
-So the parallelization approach is not a silver bullet. It is necessary in
-order to access the full power of the hardware, but it is also complex to
-reason about and susceptible to resource wasting.
+Поэтому подход к распаралеливанию не является серебрянной пулей. Конечно, он хорошо подходит чтобы использовать все
+доступные аппаратные ресурсы, но он также приводит к их неэффективному использованию.
 
-== Asynchronicity to the Rescue?
-The second approach (mentioned earlier), seeking more efficiency, can be a solution
-to the resource wasting problem. By writing _asynchronous_, _non-blocking_ code,
-you let the execution switch to another active task *using the same underlying
-resources* and later come back to the current process when the asynchronous
-processing has finished.
+== Асинхронность спасет нас?
+Второй подход (из упомянутых ранее), в повышении эффективности, может стать решением проблемы расточительного
+использования ресурсов. Написав _асинхронный_, _неблокируемый_код_,
+вы позволите исполнителю переключатся на другую активную задачу *спользуя те же основные ресурсы*,
+а затем вернутся к текущей задаче, когда асинхронная обработка другой завершится.
 
-But how can you produce asynchronous code on the JVM? Java offers two models of
-asynchronous programming:
+Какие есть способы написани асинхронного кода под JVM? Java предоставляет две модели асинхронного программирования:
 
-* *Callbacks*: Asynchronous methods do not have a return value but take an extra
-`callback` parameter (a lambda or anonymous class) that gets called when the result is
-available. A well known example is Swing's `EventListener` hierarchy.
-* *Futures*: Asynchronous methods return a `Future<T>` *immediately*. The asynchronous
-process computes a `T` value, but the `Future` object wraps access to it. The value is
-not immediately available, and the object can be polled until the value is available. For
-instance, `ExecutorService` running `Callable<T>` tasks use `Future` objects.
+* *Callbacks*: Асинхронные методы не возвращают значение, но принимают дополнительный парамер
+`callback`(лямбда выражение или аноанимный класс) котоый вызывается, когда результат готов.
+Врем известным примером является `EventListener` из библиотеки  Swing.
+* *Futures*: Асинхроанные методы возвращают обьет `Future<T>` *немедленно*. Асинхронный процесс вычисляет
+занчение `T`, а обьект `Future` является обверткой, для доступа к нему. Значение доступно не сразу, и обьект Future
+можно опрашивать, пока значение не станет доступным. Например при использовании `ExecutorService` запуск `Callable<T>`
+возвращает `Future` обьекты.
 
-Are these techniques good enough? Not for every use case, and both approaches have
-limitations.
+Что не так с этими методами? Каждый из них имеет свои ограничения в большинстве вариантов использования.
 
-Callbacks are hard to compose together, quickly leading to code that is difficult to read
-and maintain (known as "Callback Hell").
+Композиция Callback'ов очень трудное занятие, написание такого кода быстро приводит
+к результату который трудно читать и поддерживать.(известный всем "Callback Hell").
 
-Consider an example: showing the top five favorites from a user on the UI or suggestions
-if she doesn't have a favorite. This goes through three services (one gives favorite IDs,
-the second fetches favorite details, and the third offers suggestions with details):
+Рассмотрим пример: показать прять избранных обьектов в пользовательском интерфейсе или показать рекомендации, если
+у пользователя нет избранных обьектов.
+Для этого используются три сервиса(один возвращает IDs избранных обьектов,
+второй получает обьекты, а третий получает обьекты предложений):
 
-.Example of Callback Hell
+.Пример  Callback Hell
 [source,java]
 ----
 userService.getFavorites(userId, new Callback<List<String>>() { //<1>
@@ -140,26 +130,23 @@ userService.getFavorites(userId, new Callback<List<String>>() { //<1>
   }
 });
 ----
-<1> We have callback-based services: a `Callback` interface with a method invoked when
-the async process was successful and one invoked in case of an error.
-<2> The first service invokes its callback with the list of favorite IDs.
-<3> If the list is empty, we must go to the `suggestionService`.
-<4> The `suggestionService` gives a `List<Favorite>` to a second callback.
-<5> Since we deal with a UI, we need to ensure our consuming code will run in the UI
-thread.
-<6> We use Java 8 `Stream` to limit the number of suggestions processed to five, and we
-show them in a graphical list in the UI.
-<7> At each level, we deal with errors the same way: show them in a popup.
-<8> Back to the favorite ID level. If the service returned a full list, then we need to
-go to the `favoriteService` to get detailed `Favorite` objects. Since we want only five,
-we first stream the list of IDs to limit it to five.
-<9> Once again, a callback. This time we get a fully-fledged `Favorite` object that we
-push to the UI inside the UI thread.
+<1> У нас есть сервисы, доступ к которым основан на callback: a `Callback` интерфейс с методамми,
+которые вызываются в случае успеха или ошибки
+<2> Первый сервис вызывает callback со списком  ID избранных обьектов.
+<3> Если список пусты, мы переходим к `suggestionService`.
+<4> `suggestionService` возвращает `List<Favorite>` во второй callback.
+<5> Так как мы работаем с пользовательским интерфесом, мы должны гарантированно запустить код в потоке интерфейса.
+<6> Мы используем Java 8 `Stream` что бы ограничить результат 5 элементами, и  передаем их в пользовательский интерфейс.
+<7> На каждом уровне мы одинаково обрабатываем ошибки: показыаем их во всплывающем окне.
+<8> Вернемся к ID избаррных элементов. Если сервис вернул список id, нам нужно получить полные обьекты
+из `favoriteService`. Так как мы хотим только 5 элементов, мы ограничим поток ID 5 элементами.
+<9> Еще один callback. На этот раз мы получаем полные обьекты `Favorite`, которые мы отображаем в пользовательском
+интерфейсе внутри потока пользовательского интерфейса.
 
-That is a lot of code, and it is a bit hard to follow and has repetitive parts.
-Consider its equivalent in Reactor:
+Мы написали много кода, его трудно читать и в нем есть повторяющиеся части.
+Рассмотрим аналогичный код с использованием Reactor:
 
-.Example of Reactor code equivalent to callback code
+.Пример кода с использованием Reactor, функционально аналогичный примеру выше
 [source,java]
 ----
 userService.getFavorites(userId) // <1>
@@ -169,15 +156,15 @@ userService.getFavorites(userId) // <1>
            .publishOn(UiUtils.uiThreadScheduler()) // <5>
            .subscribe(uiList::show, UiUtils::errorPopup); // <6>
 ----
-<1> We start with a flow of favorite IDs.
-<2> We _asynchronously transform_ these into detailed `Favorite` objects
-(`flatMap`). We now have a flow of `Favorite`.
-<3> In case the flow of `Favorite` is empty, we switch to a fallback through the
+<1> Мы начинаем с получения потока  ID избранных.
+<2> Мы _асинхронно преобразуем_ их в полные обьекты `Favorite` (`flatMap`).
+Теперь у нас поток обьектов `Favorite`.
+<3> В случае если поток обьектов `Favorite` пустой, мы переключаемся на запасной поток от
 `suggestionService`.
-<4> We are only interested in, at most, five elements from the resulting flow.
-<5> At the end, we want to process each piece of data in the UI thread.
-<6> We trigger the flow by describing what to do with the final form of the data
-(show it in a UI list) and what to do in case of an error (show a popup).
+<4> Нас интересует не более 5 элементов из полученного потока.
+<5> В конце мы хотим обработать каждый элемент в потоке пользовательского интерфейса.
+<6> Мы запускаем поток(flow, не thread), описывая что делать с окончательной формой данных
+(показывать ее в UI) и что делать в случае ошибки (показывать всплывающее окно).
 
 What if you want to ensure the favorite IDs are retrieved in less than 800ms or, if it
 takes longer, get them from a cache? In the callback-based code, that is a complicated
