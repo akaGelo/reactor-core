@@ -170,7 +170,7 @@ What if you want to ensure the favorite IDs are retrieved in less than 800ms or,
 takes longer, get them from a cache? In the callback-based code, that is a complicated
 task. In Reactor it becomes as easy as adding a `timeout` operator in the chain:
 
-.Example of Reactor code with timeout and fallback
+.Пример с поддержкой  timeout и fallback
 [source,java]
 ----
 userService.getFavorites(userId)
@@ -182,21 +182,21 @@ userService.getFavorites(userId)
            .publishOn(UiUtils.uiThreadScheduler())
            .subscribe(uiList::show, UiUtils::errorPopup);
 ----
-<1> If the part above emits nothing for more than 800ms, propagate an error.
-<2> In case of an error, fall back to the `cacheService`.
-<3> The rest of the chain is similar to the previous example.
+<1> Если код выше ничего не выдал за 800ms, выдать ошибку.
+<2> В случае ошибки, использовать резервный `cacheService`.
+<3> Остальная часть цепочки аналогичная предыдущему примеру
 
-Futures are a bit better than callbacks, but they still do not do well at composition,
-despite the improvements brought in Java 8 by `CompletableFuture`. Orchestrating multiple
-futures together is doable but not easy. Also, `Future` has other problems: It is easy to
-end up with another blocking situation with `Future` objects by calling the `get()`
-method, they do not support lazy computation and they lack support for multiple
-values and advanced error handling.
+Обьеты Future намного лучше чем обратные вызовы, но они по прежнему не очень хороши в композиции,
+несмотря на улучшения в  классе `CompletableFuture` добавленные в Java 8.
+Совместное управление несколькими обьектами Future возможно, но не легко на практике.
+Так же у  `Future` есть другие проблемы: легко написать код, приводящий к блокировке, вызвав метод `get`,
+они не поддерживают ленивые вычисления, множественные возвращаемые значения и продвинутую обработку ошибок.
 
-Consider another example: We get a list of IDs from which we want to fetch a name and a
-statistic and combine these pair-wise, all of it asynchronously.
 
-.Example of `CompletableFuture` combination
+Рассмотрим другой пример: Мы получаем список IDs по которым мы получаем имя и статистику,
+затем обьединяем их попарно, причем все асинхронно.
+
+.Пример с  `CompletableFuture` композицией
 [source,java]
 ----
 CompletableFuture<List<String>> ids = ifhIds(); // <1>
@@ -226,26 +226,22 @@ assertThat(results).contains(
 		"Name NameNicole has stats 106",
 		"Name NameABSLAJNFOAJNFOANFANSF has stats 121");
 ----
-<1> We start off with a future that gives us a list of `id` values to process.
-<2> We want to start some deeper asynchronous processing once we get the list.
-<3> For each element in the list:
-<4> Asynchronously get the associated name.
-<5> Asynchronously get the associated task.
-<6> Combine both results.
-<7> We now have a list of futures that represent all the combination tasks. In order to
-execute these tasks, we need to convert the list to an array.
-<8> Pass the array to `CompletableFuture.allOf`, which outputs a `Future` that completes
-when all tasks have completed.
-<9> The tricky bit is that `allOf` returns `CompletableFuture<Void>`, so we
-reiterate over the list of futures, collecting their results via `join()`
-(which here doesn't block since `allOf` ensures the futures are all done).
-<10> Once the whole asynchronous pipeline has been triggered, we wait for it to
-be processed and return the list of results that we can assert.
+<1> мы начинаем с Future, которое дает нам список `id` для дальнейшей обработки.
+<2> Мы хотим начать асинхронную обработку как только получим список.
+<3> Для каждого элемента в списке:
+<4> Асинхронно получить связанное имя.
+<5> Асинхронно получить связанную задачу.
+<6> Обьединить оба результата.
+<7> Теперь у нас есть список обьектов Future которые представляют все скомбинированные задачи.
+Чтобы выполнить эти задачи, нам нужне преобразовать список в массив.
+<8> Передаем полученный массив в метод `CompletableFuture.allOf`, который возвращает результат когда все `Future` выполнятся.
+<9> Поскольку `allOf` возвращает `CompletableFuture<Void>`, мы повторно обходим список
+futures, собирая их результат через `join()` (который здесь не блокируется, поскольку `allOf` гарантирует что все futures уже выполнились).
+<10> Как только асинхронный "конвейер" запущен,мы ждем его обработку и возвращаем результат на проверку.
 
-Since Reactor has more combination operators out of the box, this process can be
-simplified:
+Т.к.в Reactor больше композиционных операторов, этот процесс может быть упрощен:
 
-.Example of Reactor code equivalent to future code
+.Пример с использованием Reactor, код эквивалентен примеру с Future
 [source,java]
 ----
 Flux<String> ids = ifhrIds(); // <1>
@@ -270,128 +266,117 @@ assertThat(results).containsExactly( // <8>
 		"Name NameABSLAJNFOAJNFOANFANSF has stats 121"
 );
 ----
-<1> This time, we start from an asynchronously provided sequence of `ids` (a
-`Flux<String>`).
-<2> For each element in the sequence, we asynchronously process it (inside the function
-that is the body `flatMap` call) twice.
-<3> Get the associated name.
-<4> Get the associated statistic.
-<5> Asynchronously combine the 2 values.
-<6> Aggregate the values into a `List` as they become available.
-<7> In production, we would continue working with the `Flux` asynchronously by further
-combining it or subscribing to it. Most probably, we would return the `result` `Mono`.
-Since we are in a test, we block, waiting for the processing to finish instead, and then
-directly return the aggregated list of values.
-<8> Assert the result.
+<1> На этот раз, с асинхронно публикуемой последовательности  `ids` (`Flux<String>`).
+<2> Мы асинхронно обрабатываем каждый элемент последовательности  дважды(внутри функции `flatMap`.
+<3> Получить связанное имя.
+<4> Получить связанную статистику.
+<5> Асинхронно объединить два значения.
+<6> Обьединить значения в  `List` как они станут доступны.
+<7> В реальном коде, мы будем продолжать работать с `Flux` асинхронно проводить операции над ним
+или подписываться на него. Скорее всего, мы бы получили в качестве результата  `Mono`.
+Т.к, мы находимся в тесте, мы вызываем блокирующий метод,ожидаем завершения обработки,
+и возвращаем агрегированный список значений.
+<8> Проверяем результат.
 
-These perils of Callback and Future are similar and are what reactive programming
-addresses with the `Publisher-Subscriber` pair.
+Задачи Callback и Future похожи.В реактивном программировании они решаются
+парой `Publisher-Subscriber`.
 
-== From Imperative to Reactive Programming
-Reactive libraries such as Reactor aim to address these drawbacks of "classic"
-asynchronous approaches on the JVM while also focusing on a few additional aspects:
+== От императивного к реактивному программированию
+Реактивные библиотеки, такие как Reactor, направлены на устранение недостатков
+"классических" подходов асинхронного программирования на JVM, и приследуют еще несколько целей:
 
-* *Composability* and *readability*
-* Data as a *flow* manipulated with a rich vocabulary of *operators*
-* Nothing happens until you *subscribe*
-* *Backpressure* or _the ability for the consumer to signal the producer that the rate of
-emission is too high_
+* *Композиционность* и *читаемость*
+* Данные как  *поток(flow)* управляемый с помощью богатого набора *операторов*
+* Ничего не происходит пока вы не *подпишитесь (subscribe*
+* *Backpressure* или _способность потребителя сигнализировать производителю
+что уроверь отправки данных слишком большой
 * *High level* but *high value* abstraction that is _concurrency-agnostic_
 
-=== Composability and Readability
-By composability, we mean the ability to orchestrate multiple asynchronous tasks, using
-results from previous tasks to feed input to subsequent ones or executing several tasks
-in a fork-join style, as well as reusing asynchronous tasks as discrete components in a
-higher-level system.
+=== Композицонность и удобочитаемость
+Под композиционностью, мы имеем в виду способность управлять несколькими асинхронными задачами,
+используя результаты предыдущих задач в качестве входных данных последующих
+или выполнение нескольких задач в стиле  fork-join, а так же повторного использования задач в качестве
+дискретных компонентов в высокоуровневых системах.
 
-The ability to orchestrate tasks is tightly coupled to the readability and
-maintainability of code. As the layers of asynchronous processes increase in both number
-and complexity, being able to compose and read code becomes increasingly difficult. As we
-saw, the callback model is simple, but one of its main drawbacks is that, for complex
-processes, you need to have a callback executed from a callback, itself nested inside
-another callback, and so on. That mess is known as *Callback Hell*. As you can guess (or
-know from experience), such code is pretty hard to go back to and reason about.
+Способность координировать задачи тесно связана с удобочитаемостью и ремонтопригодностью кода.
+С ростом числа уровней асинхронных процессов, читать и писать код становится все труднее.
+Как мы успели заметить, модель обраьных вызовов проста, но один из ее основных недостатков в том
+что в сложных процессах вам понадобится выполнять обратные вызовы из обратных вызовов, которые вложены
+в обратные вызовы и так далее. Такой код известен как  *Callback Hell*. Как вы можете догадаться
+(или знаете из опыта), к такому коду сложно вернутся, его сложно читать и модифицировать.
 
-Reactor offers rich composition options, wherein code mirrors the organization of the
-abstract process, and everything is generally kept at the same level (nesting is
-minimized).
+Reactor предлагает богатый набор вариантов композиции,при этом код отражает процесс абстрактно,
+и весь код в целом держится на одном уровне абстрации (вложенность сведена к минимуму).
 
-=== The Assembly Line Analogy
-You can think of data processed by a reactive application as moving through an assembly
-line. Reactor is both the conveyor belt and the workstations. The raw material pours from
-a source (the original `Publisher`) and ends up as a finished product ready to be pushed
-to the consumer (or `Subscriber`).
+=== Аналогия сборочной линии (конвейер)
+Вы можете представлять данные, обрабатываемые реактивным приложением, как об обьектах, движущихся по
+конвейеру. Reactor является одновременно конвейерной лентой и рабочими станциями.
+Сырые обьекты поступают из источника  (`Publisher`) и в итоге становится продуктом, готовым к отправке
+потребителю (`Subscriber`).
 
-The raw material can go through various transformations and other intermediary steps or
-be part of a larger assembly line that aggregates intermediate pieces together. If there
-is a glitch or clogging at one point (perhaps boxing the products takes a
-disproportionately long time), the afflicted workstation can signal upstream to limit the
-flow of raw material.
+Сырые обьекты могут быть преобразованы и проходить различные этапы обработки, или быть частью большой
+сборочной линии, которая обьединяет промежуточные части вместе.
+Если в одной точке наблюдается сбой или засорение (возможно упаковка продуктов занимает непропорционально
+большое время), перегруженная рабочая станция может сигнализировать вверх, что бы ограничить поток сырья.
 
-=== Operators
-In Reactor, operators are the workstations in our assembly analogy. Each operator adds
-behavior to a `Publisher` and wraps the previous step's `Publisher` into a new instance.
-The whole chain is thus linked, such that data originates from the first `Publisher` and
-moves down the chain, transformed by each link. Eventually, a `Subscriber` finishes the
-process. Remember that nothing happens until a `Subscriber` subscribes to a `Publisher`,
-as we see shortly.
+=== Операторы
+В Reactor, операторы являются рабочими станцииями в метафоре конвейера.
+Каждый оператор добавляет поведение к `Publisher` и обораичивает предыдущий шаг `Publisher` в новый экземпляр.
+Таким образом вся цепочка связана, оригинальные обьекты берутся из первого `Publisher` и движутся вниз
+по цепочке, трансформируясь каждым звеном. В конце,  `Subscriber` завершает процесс.
+Помните что ничего не происодит пока   `Subscriber` не подпишется на `Publisher`, вскоре мы это увидим.
 
-TIP: Understanding that operators create new instances can help you avoid a common
-mistake that would lead you to believe that an operator you used in your chain is not
-being applied. See this <<faq.chain,item>> in the FAQ.
+TIP: Понимание того, что операторы создают новые экземплеры, поможет вам избежать распространенной ошибки.
+Смотрие <<faq.chain,item>> в FAQ.
 
-While the Reactive Streams specification does not specify operators at all, one of the
-best added values of reactive libraries such as Reactor is the rich vocabulary of
-operators  that they provide. These cover a lot of ground, from simple transformation and
-filtering to complex orchestration and error handling.
+Хотя в спецификации Reactive Streams операторы вообще не определены,
+одно из важнейших достоинств реактивных библиотек (таких как Reactor) -- богатный набор операторов.
+Они охватывают много аспектов, от простых преобразований и фильтрации, до сложной композиции и обработки ошибок.
 
 [[reactive.subscribe]]
-=== Nothing Happens Until You `subscribe()`
-In Reactor, when you write a `Publisher` chain, data does not start pumping into it by
-default. Instead, you create an abstract description of your asynchronous process (which
-can help with reusability and composition).
+=== Ничего не случится до `subscribe()`
+В Reactor'е, когда вы пишите `Publisher` цепочку, данные не начинают поступать по умолчанию.
+Вместо этого, вы создаете абстрактное описание вашего асинхронного процесса
+(это может помочь с переиспользованием и композицией).
 
-By the act of *subscribing*, you tie the `Publisher` to a `Subscriber`, which triggers
-the flow of data in the whole chain. This is achieved internally by a single `request`
-signal from the `Subscriber` that is propagated upstream, all the way back to the source
-`Publisher`.
+В момент  *подписки(subscribing)*, вы привязываете `Publisher` к  `Subscriber`, который запускает движение данных
+во всей цепочке. Это достигается внутренним одиночным  `request` сигналом от `Subscriber`, который распространяется вверх,
+до самого `Publisher`.
 
 [[reactive.backpressure]]
-=== Backpressure
-Propagating signals upstream is also used to implement *backpressure*, which we described
-in the assembly line analogy as a feedback signal sent up the line when a workstation
-processes more slowly than an upstream workstation.
+=== Backpressure(обратное давление)
+Распространение восходящих сигналов так же используется для реализации противодавления (backpressure),
+которое мы описывали в аналогии с конвейром как сигнал обратной связи, отправляемый вверх по линии,
+когда рабочая станция обрабатывает обьекты медленнее, чем рабочая станция, находящаяся выше по цепопочке.
 
-The real mechanism defined by the Reactive Streams specification is pretty close to the
-analogy: a subscriber can work in _unbounded_ mode and let the source push all the data
-at its fastest achievable rate or it can use the `request` mechanism to signal the source
-that it is ready to process at most `n` elements.
+Реальный механизм, специфицирвоанный в  Reactive Streams, давольно близок к этой аналогии:
+подписчик может работать в _неогранниченном_ режиме, что позволяет источнику публиковать данные с максимально возможной
+скоростью, или он может использовать механизм `request` чтобы собщить, что он готов обработать не более чем `n` элементов.
 
-Intermediate operators can also change the request in-transit. Imagine a `buffer`
-operator that groups elements in batches of 10. If the subscriber requests 1 buffer, it
-is acceptable for the source to produce 10 elements. Some operators also implement
-**prefetching** strategies, which avoids `request(1)` round-trips and is beneficial
-if producing the elements before they are requested is not too costly.
+Промежуточные операторы так же могут изенять `request` в пути.  Представьте оператор `buffer`,
+который групирует элементы партиями по 10. Если подписчик запрашивает  1 buffer, то для источника допустимо
+поставить 10 элементов. Некоторые операторы реализуют стратегии **предварительной выборки (prefetching)**,
+что позволяет избежать повторных обращений `request(1)`, это выгдоно когда создание элементов до их запроса
+не является дорогостоящей операцией.
 
-This transforms the push model into a **push-pull hybrid** where the downstream can pull n
-elements from upstream if they are readily available. But if the elements are not ready,
-they get pushed by the upstream whenever they are produced.
+Это преобращует  push модель в  **push-pull гибрид** где нисходящий поток может вытянуть n элементов
+из восходящего потока если они доступны. Но если элементы не готовы, они будут опубликованы восходящим потоком,
+когда станут доступны.
 
 [[reactive.hotCold]]
-=== Hot vs Cold
-In the Rx family of reactive libraries, one can distinguish two broad categories of
-reactive sequences: *hot* and *cold*. This distinction mainly has to do with how the
-reactive stream reacts to subscribers:
+=== Горячие против Холодных
+В семействе реактивных библиотек, две основные категории реактивных последовтаельностей: *горячие(hot)* и *холодные(cold)*.
+Их различие отражает как реактивный поток реагирует на подписчиков:
 
-- A *Cold* sequence starts anew for each `Subscriber`, including at the source of data.
-For example if the source wraps an HTTP call, a new HTTP request is made for each subscription.
-- A *Hot* sequence does not start from scratch for each `Subscriber`. Rather, late
-subscribers receive signals emitted _after_ they subscribed. Note, however, that some hot
-reactive streams can cache or replay the history of emissions totally or partially. From
-a general perspective, a hot sequence can even emit when no subscriber is listening (an
-exception to the "nothing happens before you subscribe" rule).
+- *Холодные* последовательности начинаются заново для каждого `Subscriber`, в том числе в источнике данных.
+Например если источник оборачивает  HTTP запрос, новый HTTP запрос делается для каждой новой подписки.
+- *Горячие* последовательности не начинаются с нуля для каждого `Subscriber`.
+Поздние подписчики получают сигналы, публикуемые после того как они подписались.
+Обратите внимание, что некоторые горячие реактивные потоки могут кэшировать или воспроизводить историю публикаций
+полностью или частично. С общей точки зрения, горячая последовтельность может даже генерироваться,
+когда ни один подписчик не слушает (это исключение из правила "Ничего не случится до `subscribe()`").
 
-For more information on hot vs cold in the context of Reactor, see
+Для получения дополнительной информаци о горфчих и холодных потоках в Reactor, смотрите
 <<reactor.hotCold,this reactor-specific section>>.
 
 //TODO talk about concurrency agnostic? elements of functional style?
